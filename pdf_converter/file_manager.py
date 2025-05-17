@@ -54,7 +54,7 @@ class FileManager:
                 file_paths = []
                 for path in self.file_paths:
                     im = Image.open(path)
-                    file_name = f"{save_location.parent}/{path.with_suffix(fmt).name}"
+                    file_name = f"{save_location}/{path.with_suffix(fmt).name}"
                     file_paths.append(file_name)
                     im.save(file_name, optimize=True)
                 return ", ".join(file_paths)
