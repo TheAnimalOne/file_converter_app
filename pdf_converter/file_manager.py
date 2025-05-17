@@ -40,24 +40,29 @@ class FileManager:
     def display_files(self) -> list[str]:
         return [p.name for p in self.file_paths]
 
-    def convert_files(self, c_type: ConversionType, save_loc: Path) -> str:
+    def convert_files(self, c_type: ConversionType, save_loc: str) -> tuple[str, str]:
         try:
-            self._convert_files(c_type, save_loc)
+            files = self._convert_files(c_type, Path(save_loc))
+            return "Success", f"Successfully saved: {files}"
         except Exception as e:
-            return str(e)
+            return "Error", str(e)
 
-    def _convert_files(self, convertion_type_enum: ConversionType, save_location: Path) -> None:
+    def _convert_files(self, convertion_type_enum: ConversionType, save_location: Path) -> str:
         fmt = CONVERSION_TYPE_TO_FILE_FORMAT[convertion_type_enum]
         match convertion_type_enum:
-            case ConversionType.JPG | ConversionType.JPG | ConversionType.PDF:
+            case ConversionType.PNG | ConversionType.JPG | ConversionType.PDF:
+                file_paths = []
                 for path in self.file_paths:
                     im = Image.open(path)
                     file_name = f"{save_location.parent}/{path.with_suffix(fmt).name}"
-                    im.save(file_name)
+                    file_paths.append(file_name)
+                    im.save(file_name, optimize=True)
+                return ", ".join(file_paths)
             case ConversionType.COMBINED_PDF:
                 images = [Image.open(p) for p in self.file_paths]
                 # for combined pdfs, use parent folder as the file name
-                file_name = f"{save_location.parent}/{save_location.parent.with_suffix(fmt).name}"
-                images[0].save(file_name, save_all=True, append_images=images[1:])
+                file_name = fr"{save_location}\{save_location.with_suffix(fmt).name}"
+                images[0].save(file_name, save_all=True, append_images=images[1:], optimize=True)
+                return file_name
             case _:
                 raise ValueError(f"{convertion_type_enum} is not implemented")

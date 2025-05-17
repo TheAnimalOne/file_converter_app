@@ -13,10 +13,9 @@ from PyQt6.QtWidgets import (
     QWidget,
     QFileDialog,
     QAbstractItemView,
+    QMessageBox,
 )
 from file_manager import FileManager, ConversionType
-
-WINDOW_SIZE: tuple[int, int] = (750, 500)
 
 
 class FileConverterWindow(QMainWindow):
@@ -25,7 +24,6 @@ class FileConverterWindow(QMainWindow):
         super().__init__()
         self.fm = FileManager()
         self.setWindowTitle("FileConverter")
-        # self.setFixedSize(WINDOW_SIZE[0], WINDOW_SIZE[1])
 
         self.layout = QVBoxLayout()
         h_box1 = QHBoxLayout()
@@ -48,12 +46,7 @@ class FileConverterWindow(QMainWindow):
         self._clear_files_but(h_box2)
         self.layout.addLayout(h_box2)
         # convert button (5, 1)
-        # self._convert_but()
-        # testing
-        but = QPushButton("check selected")
-        but.clicked.connect(self.test)
-        self.layout.addWidget(but)
-
+        self._convert_but()
         self.setLayout(self.layout)
         widget = QWidget()
         widget.setLayout(self.layout)
@@ -92,6 +85,25 @@ class FileConverterWindow(QMainWindow):
             self.fm.add_file_path(filenames)
             self.files_list.addItems(self.fm.display_files())
 
+    def open_dir_selector(self):
+        dir_sel = QFileDialog()
+        dir_sel.setFileMode(QFileDialog.FileMode.Directory)
+        dir_name = dir_sel.getExistingDirectory(
+            self,
+            "Select Directory",
+            r"C:/",
+        )
+        if dir_name:
+            msg_type, msg_content = self.fm.convert_files(self.conversion_options.currentText(), dir_name)
+            # bring up msg in box
+            pop_up = QMessageBox()
+            pop_up.setWindowTitle(msg_type)
+            pop_up.setText(msg_content)
+            pop_up.exec()
+            # clear files
+            self.fm.clear_file_paths()
+            self.files_list.clear()
+
     def _switch_file_but(self, but_layout):
         but = QPushButton("Swap Files")
         but.clicked.connect(self.switch_file_order)
@@ -124,6 +136,11 @@ class FileConverterWindow(QMainWindow):
     def clear_all_files(self):
         self.fm.clear_file_paths()
         self.files_list.clear()
+
+    def _convert_but(self):
+        but = QPushButton("Convert")
+        but.clicked.connect(self.open_dir_selector)
+        self.layout.addWidget(but)
 
 def main():
     file_converter_app = QApplication([])
