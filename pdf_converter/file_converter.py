@@ -10,6 +10,11 @@ class ConversionType(StrEnum):
     COMBINED_PDF = 'COMBINED PDF'
 
 
+class ConversionOutcome(StrEnum):
+    SUCCESS = "Success"
+    ERROR = "Error"
+
+
 CONVERSION_TYPE_TO_FILE_FORMAT: dict[ConversionType, str] = {
     ConversionType.PNG: '.png',
     ConversionType.JPG: '.jpg',
@@ -18,7 +23,7 @@ CONVERSION_TYPE_TO_FILE_FORMAT: dict[ConversionType, str] = {
 }
 
 
-class FileManager:
+class FileConverter:
 
     def __init__(self):
         self.file_paths = []
@@ -28,6 +33,7 @@ class FileManager:
             self.file_paths.append(Path(p))
 
     def delete_file_path(self, indices: list[int]) -> None:
+        # delete from back to front, to prevent changing index problems
         for i in sorted(indices, reverse=True):
             del self.file_paths[i]
 
@@ -40,12 +46,12 @@ class FileManager:
     def display_files(self) -> list[str]:
         return [p.name for p in self.file_paths]
 
-    def convert_files(self, c_type: ConversionType, save_loc: str) -> tuple[str, str]:
+    def convert_files(self, c_type: ConversionType, save_loc: str) -> tuple[ConversionOutcome, str]:
         try:
             files = self._convert_files(c_type, Path(save_loc))
-            return "Success", f"Successfully saved: {files}"
+            return ConversionOutcome.SUCCESS, f"Successfully saved: {files}"
         except Exception as e:
-            return "Error", str(e)
+            return ConversionOutcome.ERROR, str(e)
 
     def _convert_files(self, convertion_type_enum: ConversionType, save_location: Path) -> str:
         fmt = CONVERSION_TYPE_TO_FILE_FORMAT[convertion_type_enum]
@@ -60,7 +66,7 @@ class FileManager:
                 return ", ".join(file_paths)
             case ConversionType.COMBINED_PDF:
                 images = [Image.open(p) for p in self.file_paths]
-                # for combined pdfs, use parent folder as the file name
+                # for combined pdfs, use directory name as the file name
                 file_name = fr"{save_location}\{save_location.with_suffix(fmt).name}"
                 images[0].save(file_name, save_all=True, append_images=images[1:], optimize=True)
                 return file_name
