@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QAbstractItemView,
 )
-from file_converter import (
+from classes.file_converter_class import (
     FileConverter,
     ConversionType,
     ConversionOutcome,
