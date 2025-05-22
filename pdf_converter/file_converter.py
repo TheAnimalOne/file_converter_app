@@ -1,74 +1,26 @@
-from PIL import Image
-from enum import StrEnum
-from pathlib import Path
+import sys
+import ctypes
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication
+from classes.file_converter_window import FileConverterWindow
+
+APP_ID = u'file_converter_app.v1.0.0'
 
 
-class ConversionType(StrEnum):
-    PNG = 'PNG'
-    JPG = 'JPG'
-    PDF = 'PDF'
-    COMBINED_PDF = 'COMBINED PDF'
+def main():
+    print("Starting App!")
+    # add logo to bar
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    file_converter_app = QApplication([])
+    # add logo
+    file_converter_app.setWindowIcon(QIcon("classes/convertible.png"))
+    # set dark mode
+    file_converter_app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+    file_converter_window = FileConverterWindow()
+    file_converter_window.show()
+    sys.exit(file_converter_app.exec())
 
-
-class ConversionOutcome(StrEnum):
-    SUCCESS = "Success"
-    ERROR = "Error"
-
-
-CONVERSION_TYPE_TO_FILE_FORMAT: dict[ConversionType, str] = {
-    ConversionType.PNG: '.png',
-    ConversionType.JPG: '.jpg',
-    ConversionType.PDF: '.pdf',
-    ConversionType.COMBINED_PDF: '.pdf',
-}
-
-
-class FileConverter:
-
-    def __init__(self):
-        self.file_paths = []
-
-    def add_file_path(self, new_paths: list[str]) -> None:
-        for p in new_paths:
-            self.file_paths.append(Path(p))
-
-    def delete_file_path(self, indices: list[int]) -> None:
-        # delete from back to front, to prevent changing index problems
-        for i in sorted(indices, reverse=True):
-            del self.file_paths[i]
-
-    def clear_file_paths(self) -> None:
-        self.file_paths = []
-
-    def switch_order(self, i: int, j: int) -> None:
-        self.file_paths[i], self.file_paths[j] = self.file_paths[j], self.file_paths[i]
-
-    def display_files(self) -> list[str]:
-        return [p.name for p in self.file_paths]
-
-    def convert_files(self, c_type: ConversionType, save_loc: str) -> tuple[ConversionOutcome, str]:
-        try:
-            files = self._convert_files(c_type, Path(save_loc))
-            return ConversionOutcome.SUCCESS, f"Successfully saved: {files}"
-        except Exception as e:
-            return ConversionOutcome.ERROR, str(e)
-
-    def _convert_files(self, convertion_type_enum: ConversionType, save_location: Path) -> str:
-        fmt = CONVERSION_TYPE_TO_FILE_FORMAT[convertion_type_enum]
-        match convertion_type_enum:
-            case ConversionType.PNG | ConversionType.JPG | ConversionType.PDF:
-                file_paths = []
-                for path in self.file_paths:
-                    im = Image.open(path)
-                    file_name = fr"{save_location}\{path.with_suffix(fmt).name}"
-                    file_paths.append(file_name)
-                    im.save(file_name, optimize=True)
-                return ", ".join(file_paths)
-            case ConversionType.COMBINED_PDF:
-                images = [Image.open(p) for p in self.file_paths]
-                # for combined pdfs, use directory name as the file name
-                file_name = fr"{save_location}\{save_location.with_suffix(fmt).name}"
-                images[0].save(file_name, save_all=True, append_images=images[1:], optimize=True)
-                return file_name
-            case _:
-                raise ValueError(f"{convertion_type_enum} is not implemented")
+if __name__ == "__main__":
+    main()
